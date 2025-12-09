@@ -15,7 +15,7 @@ import java.util.UUID;
 
 @Service
 @Slf4j
-public class BlobStorageService {
+public class BlobStorageService { //CCTV 이미지 → Azure Blob Storage 업로드
 
     @Value("${azure.storage.connection-string}")
     private String connectionString;
@@ -23,9 +23,14 @@ public class BlobStorageService {
     @Value("${azure.storage.container-name}")
     private String containerName;
 
-    private BlobContainerClient containerClient;
+    private BlobContainerClient containerClient; // Azure Blob Storage의 컨테이너(폴더)를 다루는 클라이언트
 
-    @PostConstruct
+    /**
+     1. Azure와 연결 (connectionString 사용)
+     2. cctv-images 컨테이너 찾기
+     3. 컨테이너 없으면 생성 (최초 1회만)
+     */
+    @PostConstruct // 스프링 시작 시 자동으로 실행
     public void init() {
         BlobServiceClient blobServiceClient = new BlobServiceClientBuilder()
                 .connectionString(connectionString)

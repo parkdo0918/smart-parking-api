@@ -101,7 +101,7 @@ public class ComputerVisionService {
     }
 
     /**
-     * 이미지에서 차량 감지 여부 확인
+     * 이미지에서 차량 감지 여부 확인 (확장용)
      */
     public boolean detectVehicle(MultipartFile file) throws IOException {
         ImageAnalysisResult result = client.analyze(
