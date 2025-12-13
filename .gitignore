@@ -40,3 +40,4 @@ out/
 application-local.yml
 application-prod.yml
 .env
+application-secret.properties

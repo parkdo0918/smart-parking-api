@@ -4,8 +4,10 @@ import com.example.smartparkingapi.parking.dto.ParkingStatusResponse;
 import com.example.smartparkingapi.parking.dto.VehicleEntryResponse;
 import com.example.smartparkingapi.parking.entity.ParkingRecord;
 import com.example.smartparkingapi.parking.service.ParkingService;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -38,7 +40,9 @@ public class ParkingController {
      * 차량 입차 처리
      * CCTV 이미지 업로드 → AI 분석 → DB 저장
      */
-    @PostMapping("/entry")
+    @PostMapping(value = "/entry", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "차량 입차", description = "CCTV 이미지 업로드 → AI 분석 → DB 저장")
+
     public ResponseEntity<VehicleEntryResponse> vehicleEntry(
             @RequestParam("image") MultipartFile image) {
 
@@ -66,6 +70,7 @@ public class ParkingController {
     /**
      * 차량 출차 처리
      */
+    @Operation(summary = "차량 출차", description = "번호판으로 출차 처리")
     @PostMapping("/exit")
     public ResponseEntity<VehicleEntryResponse> vehicleExit(
             @RequestParam("licensePlate") String licensePlate) {
@@ -84,6 +89,7 @@ public class ParkingController {
     /**
      * 실시간 주차 현황 조회
      */
+    @Operation(summary = "주차 현황 조회", description = "실시간 주차 가능 공간 수 조회 (Redis 캐시)")
     @GetMapping("/parking/status")
     public ResponseEntity<ParkingStatusResponse> getParkingStatus() {
         log.info("주차 현황 조회 요청");
@@ -94,6 +100,7 @@ public class ParkingController {
     /**
      * 차량 출입 기록 조회
      */
+    @Operation(summary = "출입 기록 조회", description = "차량 출입 기록 조회 (번호판 필터 가능)")
     @GetMapping("/parking/history")
     public ResponseEntity<List<ParkingRecord>> getParkingHistory(
             @RequestParam(value = "licensePlate", required = false) String licensePlate) {
@@ -106,6 +113,7 @@ public class ParkingController {
     /**
      * 현재 주차 중인 차량 목록
      */
+    @Operation(summary = "현재 주차 중인 차량", description = "현재 주차장에 있는 차량 목록")
     @GetMapping("/parking/current")
     public ResponseEntity<List<ParkingRecord>> getCurrentlyParkedVehicles() {
         log.info("현재 주차 중인 차량 조회 요청");
