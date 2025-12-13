@@ -33,9 +33,10 @@ public class ComputerVisionService {
 
     private ImageAnalysisClient client;
 
-    // 한국 차량 번호판 패턴 (예: 12가1234, 서울12가1234)
+    // 번호판에서 숫자만 추출 (중간 한글 위치의 숫자 제거)
+    // 예: "1571 4895" -> "157 4895" (중간 1은 한글 "고"를 잘못 읽은 것)
     private static final Pattern LICENSE_PLATE_PATTERN =
-            Pattern.compile("([가-힣]{0,2})?\\s*([0-9]{2,3})\\s*([가-힣])\\s*([0-9]{4})");
+            Pattern.compile("([0-9]{2,3})[0-9]?\\s+([0-9]{4})");
 
     @PostConstruct
     public void init() {
@@ -52,11 +53,14 @@ public class ComputerVisionService {
      * @return 인식된 번호판 문자열 (없으면 null)
      */
     public String recognizeLicensePlate(MultipartFile file) throws IOException {
-        // 이미지 분석 요청
+        // 이미지 분석 요청 (한국어 OCR 설정)
+        ImageAnalysisOptions options = new ImageAnalysisOptions()
+                .setLanguage("ko");  // 한국어로 OCR 수행하여 "고", "가" 등 한글 인식
+
         ImageAnalysisResult result = client.analyze(
                 BinaryData.fromBytes(file.getBytes()),
                 Arrays.asList(VisualFeatures.READ),  // OCR 기능 사용
-                new ImageAnalysisOptions()
+                options
         );
 
         // 텍스트 추출
@@ -71,57 +75,36 @@ public class ComputerVisionService {
             }
 
             // 번호판 패턴 매칭
-            String licensePlate = extractLicensePlate(allText.toString());
+            String recognizedText = allText.toString().trim();
+            log.info("전체 인식된 텍스트: '{}'", recognizedText);
+
+            String licensePlate = extractLicensePlate(recognizedText);
             if (licensePlate != null) {
                 log.info("번호판 인식 성공: {}", licensePlate);
                 return licensePlate;
+            } else {
+                log.warn("번호판 패턴 매칭 실패 - 인식된 텍스트: '{}'", recognizedText);
             }
         }
 
-        log.warn("번호판 인식 실패");
+        log.warn("번호판 인식 실패 - OCR 결과 없음");
         return null;
     }
 
     /**
-     * 텍스트에서 번호판 패턴 추출
+     * 텍스트에서 번호판 패턴 추출 (숫자만)
      */
     private String extractLicensePlate(String text) {
-        Matcher matcher = LICENSE_PLATE_PATTERN.matcher(text.replaceAll("\\s+", ""));
-
+        Matcher matcher = LICENSE_PLATE_PATTERN.matcher(text);
         if (matcher.find()) {
-            String region = matcher.group(1) != null ? matcher.group(1) : "";
-            String num1 = matcher.group(2);
-            String letter = matcher.group(3);
-            String num2 = matcher.group(4);
-
-            return (region + num1 + letter + num2).trim();
+            String num1 = matcher.group(1);
+            String num2 = matcher.group(2);
+            String licensePlate = num1 + " " + num2;
+            log.info("번호판 숫자 추출 성공: {} + {} = {}", num1, num2, licensePlate);
+            return licensePlate;
         }
 
         return null;
     }
 
-    /**
-     * 이미지에서 차량 감지 여부 확인 (확장용)
-     */
-    public boolean detectVehicle(MultipartFile file) throws IOException {
-        ImageAnalysisResult result = client.analyze(
-                BinaryData.fromBytes(file.getBytes()),
-                Arrays.asList(VisualFeatures.OBJECTS),
-                new ImageAnalysisOptions()
-        );
-
-        if (result.getObjects() != null) {
-            return result.getObjects().getValues().stream()
-                    .anyMatch(obj ->
-                            obj.getTags().stream()
-                                    .anyMatch(tag ->
-                                            tag.getName().equalsIgnoreCase("car") ||
-                                                    tag.getName().equalsIgnoreCase("vehicle") ||
-                                                    tag.getName().equalsIgnoreCase("truck")
-                                    )
-                    );
-        }
-
-        return false;
-    }
 }
