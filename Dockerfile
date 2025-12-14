@@ -6,12 +6,10 @@ COPY src ./src
 RUN gradle build -x test --no-daemon
 
 # Run stage
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 WORKDIR /app
 
-# 타임존 설정
 ENV TZ=Asia/Seoul
-RUN apk add --no-cache tzdata
 
 COPY --from=build /app/build/libs/*.jar app.jar
 
