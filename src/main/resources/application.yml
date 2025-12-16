@@ -1,5 +1,5 @@
 server:
-  port: 8083 # 배포 환경 기본 포트 (local.yml에서 8083으로 덮어씀)
+  port: 8083
 
 spring:
   config:
